@@ -97,7 +97,7 @@ func (module *FloatyID) Provision(ctx caddy.Context) error {
 	module.logger = ctx.Logger();
 	// Normalize the parameters
 	if module.Length < 1 {
-		module.Length = 8;
+		module.Length = 12;
 	};
 	if module.Additional == nil {
 		module.Additional = make(map[string]int);
@@ -106,7 +106,7 @@ func (module *FloatyID) Provision(ctx caddy.Context) error {
 	floatyIdGlobal = nanoid.Must(module.Length);
 	for i0, e0 := range module.Additional {
 		if e0 < 1 {
-			e0 = 8;
+			e0 = 12;
 		};
 		floatyIdMapped[i0] = nanoid.Must(e0);
 	};
