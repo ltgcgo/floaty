@@ -1,3 +1,5 @@
 *.swp
 .zcompdump
 build
+caddy
+caddy.exe
