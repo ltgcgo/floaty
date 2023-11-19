@@ -7,8 +7,8 @@ import (
 	//"strconv"
 
 	"github.com/caddyserver/caddy/v2"
-	//"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
-	//"github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile"
+	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
+	httpCaddyfile "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile"
 	caddyHttp "github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	nanoid "github.com/matoous/go-nanoid/v2"
 )
@@ -28,6 +28,28 @@ type FloatyID struct {
 
 	// Map of additional instance IDs initialized
 	MappedIds map[string]string
+}
+
+// Caddyfile syntax parsing
+func (module *FloatyID) UnmarshalCaddyfile(
+	dispenser *caddyfile.Dispenser,
+) error {
+	return nil
+}
+
+// Entrypoint for Caddyfile parsing
+func cfParser(
+	helper httpCaddyfile.Helper,
+) (
+	caddyHttp.MiddlewareHandler,
+	error,
+) {
+	module := new(FloatyID);
+	err := module.UnmarshalCaddyfile(helper.Dispenser);
+	if (err != nil) {
+		return nil, err;
+	};
+	return module, nil;
 }
 
 // Initialize the module
@@ -75,7 +97,7 @@ func (module *FloatyID) Provision(ctx caddy.Context) error {
 // Handling phase
 
 // Handle requests with placeholder replacements
-func (module FloatyID) ServeHTTP (
+func (module FloatyID) ServeHTTP(
 	writer http.ResponseWriter,
 	request *http.Request,
 	handler caddyHttp.Handler,
@@ -89,4 +111,9 @@ func (module FloatyID) ServeHTTP (
 	return handler.ServeHTTP(writer, request);
 }
 
-// Caddyfile handling
+// Interface guards
+var (
+	_ caddy.Provisioner = (*FloatyID)(nil)
+	_ caddyfile.Unmarshaler = (*FloatyID)(nil)
+	_ caddyHttp.MiddlewareHandler = (*FloatyID)(nil)
+);
