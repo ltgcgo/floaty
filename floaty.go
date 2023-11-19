@@ -5,6 +5,7 @@ package floaty
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
@@ -17,25 +18,36 @@ import (
 // Initialization phase
 
 // Floaty implements global placeholders that rolls with a set interval
-type FloatyID struct {
+type FloatyPool struct {
+	lastProvision int64
+	nextProvision int64
+	map map[string]string
+}
+type FloatyModule struct {
 	// Logger
 	logger *zap.Logger
 
+	// generated service name
+	Service string
+
 	// Length of instance ID
 	Length int `json:"length"`
+
+	// Duration of validity
+	Duration time.Duration `json:"duration"`
 
 	// Map of additional instance IDs to be set
 	Additional map[string]int `json:"additional,omitempty"`
 
 	// Initialized master ID
-	InstanceId string
+	InstanceId map[string]string
 
 	// Map of additional instance IDs initialized
-	MappedIds map[string]string
+	MappedIds map[string]FloatyPool
 }
 
 // Caddyfile syntax parsing
-func (module *FloatyID) UnmarshalCaddyfile(
+func (module *FloatyModule) UnmarshalCaddyfile(
 	dispenser *caddyfile.Dispenser,
 ) error {
 	arg1 := dispenser.NextArg();
@@ -63,7 +75,7 @@ func cfParser(
 	caddyHttp.MiddlewareHandler,
 	error,
 ) {
-	module := new(FloatyID);
+	module := new(FloatyModule);
 	err := module.UnmarshalCaddyfile(helper.Dispenser);
 	if (err != nil) {
 		return nil, err;
@@ -73,16 +85,16 @@ func cfParser(
 
 // Initialize the module
 func init() {
-	caddy.RegisterModule(FloatyID{});
+	caddy.RegisterModule(FloatyModule{});
 	httpCaddyfile.RegisterHandlerDirective("floaty", cfParser);
 }
 
 // Register the Caddy plugin
-func (FloatyID) CaddyModule() caddy.ModuleInfo {
+func (FloatyModule) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID: "http.handlers.floaty",
 		New: func() caddy.Module {
-			return new(FloatyID)
+			return new(FloatyModule)
 		},
 	};
 }
@@ -90,9 +102,9 @@ func (FloatyID) CaddyModule() caddy.ModuleInfo {
 // Provisioning phase
 
 // Set up the IDs
-var floatyIdGlobal string;
-var floatyIdMapped map[string]string;
-func (module *FloatyID) Provision(ctx caddy.Context) error {
+var FloatyModuleGlobal string;
+var FloatyModuleMapped map[string]string;
+func (module *FloatyModule) Provision(ctx caddy.Context) error {
 	// Create a logger
 	module.logger = ctx.Logger();
 	// Normalize the parameters
@@ -103,16 +115,16 @@ func (module *FloatyID) Provision(ctx caddy.Context) error {
 		module.Additional = make(map[string]int);
 	};
 	// Generate the IDs
-	floatyIdGlobal = nanoid.Must(module.Length);
+	FloatyModuleGlobal = nanoid.Must(module.Length);
 	for i0, e0 := range module.Additional {
 		if e0 < 1 {
 			e0 = 12;
 		};
-		floatyIdMapped[i0] = nanoid.Must(e0);
+		FloatyModuleMapped[i0] = nanoid.Must(e0);
 	};
 	// Bind the IDs to global variables
-	module.InstanceId = floatyIdGlobal;
-	module.MappedIds = floatyIdMapped;
+	module.InstanceId = FloatyModuleGlobal;
+	module.MappedIds = FloatyModuleMapped;
 	// Log the created IDs
 	module.logger.Info(
 		"Floaty has provisioned global ID: ",
@@ -124,27 +136,27 @@ func (module *FloatyID) Provision(ctx caddy.Context) error {
 // Handling phase
 
 // Handle requests with placeholder replacements
-func (module FloatyID) ServeHTTP(
+func (module FloatyModule) ServeHTTP(
 	writer http.ResponseWriter,
 	request *http.Request,
 	handler caddyHttp.Handler,
 ) error {
 	repl := request.Context().Value(caddy.ReplacerCtxKey).(*caddy.Replacer);
 	// Set values for placeholders
-	repl.Set("http.floaty", module.InstanceId);
+	/*repl.Set("http.floaty", module.InstanceId);
 	module.logger.Info(
 		"Floaty has accessed global ID: ",
 		zap.String("id", module.InstanceId),
 	);
 	for i0, e0 := range module.MappedIds {
 		repl.Set("http.floaty." + i0, e0);
-	};
+	};*/
 	return handler.ServeHTTP(writer, request);
 }
 
 // Interface guards
 var (
-	_ caddy.Provisioner = (*FloatyID)(nil)
-	_ caddyfile.Unmarshaler = (*FloatyID)(nil)
-	_ caddyHttp.MiddlewareHandler = (*FloatyID)(nil)
+	_ caddy.Provisioner = (*FloatyModule)(nil)
+	_ caddyfile.Unmarshaler = (*FloatyModule)(nil)
+	_ caddyHttp.MiddlewareHandler = (*FloatyModule)(nil)
 );

@@ -3,7 +3,9 @@
 }
 
 http://:8040 {
-	floaty
+	floaty exampleService {
+		nextField 16 10m
+	}
 	header X-Floaty {http.floaty}
 	header X-Time {time.now.http}
 	respond "Hello! The current Floaty ID is: {{placeholder \"http.floaty\"}}."
