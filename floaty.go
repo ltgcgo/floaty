@@ -13,6 +13,13 @@ import (
 	nanoid "github.com/matoous/go-nanoid/v2"
 )
 
-// Floaty implements 
+// Floaty implements global placeholders that rolls with a set interval.
+type FloatyID struct {
+	// Length of instance ID
+	Length int `json:"length"`;
 
-// Initialize the module
+	// Map of additional instance IDs to be set
+	Additional map[string]int `json:"additional,omitempty"`;
+}
+
+// Initialize the module.
