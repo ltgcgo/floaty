@@ -16,6 +16,8 @@ pkgs.mkShell {
 		gzip
 		zopfli
 		brotli
+		go
+		xcaddy
 	];
 	GIT_EDITOR = "${pkgs.nano}/bin/nano";
 	shellHook = ''
