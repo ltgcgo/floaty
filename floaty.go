@@ -11,12 +11,16 @@ import (
 	httpCaddyfile "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile"
 	caddyHttp "github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	nanoid "github.com/matoous/go-nanoid/v2"
+	"go.uber.org/zap"
 )
 
 // Initialization phase
 
 // Floaty implements global placeholders that rolls with a set interval
 type FloatyID struct {
+	// Logger
+	logger *zap.Logger
+
 	// Length of instance ID
 	Length int `json:"length"`
 
@@ -73,6 +77,8 @@ func (FloatyID) CaddyModule() caddy.ModuleInfo {
 var floatyIdGlobal string;
 var floatyIdMapped map[string]string;
 func (module *FloatyID) Provision(ctx caddy.Context) error {
+	// Create a logger
+	module.logger = ctx.Logger();
 	// Normalize the parameters
 	if module.Length < 1 {
 		module.Length = 8;
@@ -91,6 +97,11 @@ func (module *FloatyID) Provision(ctx caddy.Context) error {
 	// Bind the IDs to global variables
 	module.InstanceId = floatyIdGlobal;
 	module.MappedIds = floatyIdMapped;
+	// Log the created IDs
+	module.logger.Info(
+		"Floaty has provisioned global ID: ",
+		zap.String("id", module.InstanceId),
+	);
 	return nil;
 }
 
@@ -105,6 +116,10 @@ func (module FloatyID) ServeHTTP(
 	repl := request.Context().Value(caddy.ReplacerCtxKey).(*caddy.Replacer);
 	// Set values for placeholders
 	repl.Set("http.floaty", module.InstanceId);
+	module.logger.Info(
+		"Floaty has accessed global ID: ",
+		zap.String("id", module.InstanceId),
+	);
 	for i0, e0 := range module.MappedIds {
 		repl.Set("http.floaty." + i0, e0);
 	};
