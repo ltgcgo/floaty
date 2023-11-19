@@ -74,13 +74,13 @@ func cfParser(
 // Initialize the module
 func init() {
 	caddy.RegisterModule(FloatyID{});
-	httpCaddyfile.RegisterHandlerDirective("floaty");
+	httpCaddyfile.RegisterHandlerDirective("floaty", cfParser);
 }
 
 // Register the Caddy plugin
 func (FloatyID) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID: "http.handlers.ltgc.floaty",
+		ID: "http.handlers.floaty",
 		New: func() caddy.Module {
 			return new(FloatyID)
 		},
