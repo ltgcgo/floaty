@@ -6,17 +6,23 @@ let
 in
 pkgs.mkShell {
 	packages = with pkgs; [
+		# Included in BusyBox
 		ncurses
+		less
+		# Supported shells
 		bash
 		zsh
+		# System utilities
 		procps
 		tree
+		# Required utilities
 		git
 		nano
 		curl
 		gzip
 		zopfli
 		brotli
+		# Development dependencies
 		go
 		xcaddy
 	];
