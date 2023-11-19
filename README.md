@@ -1,20 +1,6 @@
-# shx
-📜 Bash/PDKSH shell action executor. Never `npx` again.
+# Floaty
+☁️ Prevent loopbacks... Without traceability.
 
-Documentation available at [kb.ltgc.cc](https://kb.ltgc.cc/shx/).
+This is a Caddy plugin that adds customizable rolling instance IDs, permitting loopback prevention while maximizing difficulty in tracing.
 
-## Supported shells
-* AT&T `ksh`
-  * May not work properly due to buggy `IFS` implementation.
-* Bash
-* `zsh`
-
-## Unsupported shells
-* `ash`
-* BusyBox `sh`
-* `dash`
-* `loksh` (as of version 7.4)
-* `oksh` (as of version 7.3)
-* OpenBSD `ksh`
-* `yash` (as of version 2.55)
-* `mksh` (when array slicing is supported)
+Documentation available at [kb.ltgc.cc](https://kb.ltgc.cc/floaty/).
