@@ -4,7 +4,7 @@ package floaty
 
 import (
 	"net/http"
-	//"strconv"
+	"strconv"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
@@ -38,7 +38,22 @@ type FloatyID struct {
 func (module *FloatyID) UnmarshalCaddyfile(
 	dispenser *caddyfile.Dispenser,
 ) error {
-	return nil
+	arg1 := dispenser.NextArg();
+	arg2 := dispenser.NextArg();
+	// Standalone length parsing
+	if arg1 && arg2 {
+		value := dispenser.Val();
+		length, err := strconv.Atoi(value);
+		if err != nil {
+			return dispenser.Err("Conversion of length to integer failed.");
+		};
+		if length < 1 {
+			return dispenser.Err("Length must be a positive integer.");
+		};
+		module.Length = length;
+	};
+	// Mapped IDs length parsing
+	return nil;
 }
 
 // Entrypoint for Caddyfile parsing
@@ -59,6 +74,7 @@ func cfParser(
 // Initialize the module
 func init() {
 	caddy.RegisterModule(FloatyID{});
+	httpCaddyfile.RegisterHandlerDirective("floaty");
 }
 
 // Register the Caddy plugin

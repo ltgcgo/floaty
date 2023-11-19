@@ -1,4 +1,9 @@
+{
+	order floaty before header
+}
+
 http://:8040 {
+	floaty
 	header X-Floaty {http.floaty}
 	header X-Time {time.now.http}
 	respond "Hello! The current Floaty ID is: {{placeholder \"http.floaty\"}}."
