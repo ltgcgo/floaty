@@ -3,6 +3,9 @@
 }
 
 http://:8040 {
+	log {
+		level INFO
+	}
 	floaty 8 10s {
 		nextField 16 10m
 	}

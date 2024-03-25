@@ -2,8 +2,9 @@ package floaty
 
 import (
 	"net/http"
-	//"strconv"
+	"strconv"
 	"time"
+	"fmt"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
@@ -23,12 +24,62 @@ type FloatyItem struct {
 }
 type FloatyModule struct {
 	logger *zap.Logger
-	values map[string]*FloatyItem
+	values map[string]*FloatyItem `json:"additional,omitempty"`
 }
 // Parse the Caddyfile directives
 func (module *FloatyModule) UnmarshalCaddyfile(
 	dispenser *caddyfile.Dispenser,
 ) error {
+	timeNow := time.Now().UnixMilli();
+	fmt.Printf("\x1b[1;33m[Floaty]\x1b[0;m Parsing Caddyfile... %d\n", timeNow);
+	// Initialize the maps
+	if (module.values == nil) {
+		module.values = make(map[string]*FloatyItem);
+		fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Map not yet provisioned. Creating the map.");
+	};
+	module.values["rootId"] = new(FloatyItem);
+	// Parse the rootId parameters
+	arg1 := dispenser.NextArg();
+	arg2 := dispenser.NextArg();
+	var length int;
+	var duration int64;
+	if (arg1 && arg2) {
+		lengthRaw, err := strconv.Atoi(dispenser.Val());
+		if (err != nil) {
+			return dispenser.Err("Cannot parse length into an integer");
+		};
+		if (lengthRaw < 4) {
+			lengthRaw = 4;
+		} else if (length > 96) {
+			lengthRaw = 96
+		};
+		length = lengthRaw;
+	} else {
+		length = 8;
+	};
+	if (dispenser.NextArg()) {
+		durationObj, err := time.ParseDuration(dispenser.Val());
+		if (err != nil) {
+			return dispenser.Err("Cannot parse duration into a duration");
+		};
+		duration = durationObj.Milliseconds();
+		if (duration < 10000) {
+			duration = 10000;
+		};
+	} else {
+		duration = 5400000; // 15 minutes
+	};
+	module.values["rootId"].duration = duration;
+	module.values["rootId"].length = length;
+	module.values["rootId"].id = nanoid.Must(module.values["rootId"].length);
+	module.values["rootId"].lastWrite = timeNow;
+	module.values["rootId"].nextWrite = timeNow + module.values["rootId"].duration;
+	fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Root parameters parsed.");
+	/*fmt.Printf("%d\n", length);
+	fmt.Printf("%d\n", duration);
+	fmt.Println(module.values["rootId"].id);
+	fmt.Println(module.values["rootId"].lastWrite);
+	fmt.Println(module.values["rootId"].nextWrite);*/
 	return nil;
 }
 func caddyParser(
@@ -42,6 +93,7 @@ func caddyParser(
 	if (err != nil) {
 		return nil, err;
 	};
+	fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m No errors are present in the Caddyfile.");
 	return module, nil;
 }
 // Register the module
@@ -61,20 +113,18 @@ func init() {
 // Provision!
 func (module *FloatyModule) Provision(ctx caddy.Context) error {
 	timeNow := time.Now().UnixMilli();
+	if (module.values == nil) {
+		module.values = make(map[string]*FloatyItem);
+		module.values["rootId"] = new(FloatyItem);
+		module.values["rootId"].duration = 5000;
+		module.values["rootId"].length = 24;
+		module.values["rootId"].id = nanoid.Must(module.values["rootId"].length);
+		module.values["rootId"].lastWrite = timeNow;
+		module.values["rootId"].nextWrite = timeNow + module.values["rootId"].duration;
+		fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Map not yet parsed. Creating the map.");
+	};
 	module.logger = ctx.Logger();
-	module.values = make(map[string]*FloatyItem);
-	module.values["rootId"] = new(FloatyItem);
-	module.values["rootId"].duration = 5000;
-	module.values["rootId"].length = 16;
-	module.values["rootId"].id = nanoid.Must(module.values["rootId"].length);
-	module.values["rootId"].lastWrite = timeNow;
-	module.values["rootId"].nextWrite = timeNow + module.values["rootId"].duration;
-	module.logger.Info(
-		"Floaty has been provisioned!",
-		zap.String("rootId", module.values["rootId"].id),
-		zap.Int64("lastWrite", module.values["rootId"].lastWrite),
-		zap.Int64("nextWrite", module.values["rootId"].nextWrite),
-	);
+	fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Now provisioned!")
 	return nil;
 }
 
@@ -94,6 +144,9 @@ func (module FloatyModule) ServeHTTP(
 	repl := request.Context().Value(caddy.ReplacerCtxKey).(*caddy.Replacer);
 	// Refresh IDs when stale
 	// Refresh root ID
+	fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Received a request.");
+	fmt.Println(module.values["rootId"].nextWrite);
+	fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Begins processing.");
 	if (module.values["rootId"].nextWrite <= timeNow) {
 		module.logger.Info(
 			"Root ID of Floaty has expired! Current state.",
