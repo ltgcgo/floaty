@@ -3,7 +3,7 @@
 }
 
 http://:8040 {
-	floaty exampleService {
+	floaty 8 10s {
 		nextField 16 10m
 	}
 	header X-Floaty {http.floaty}
