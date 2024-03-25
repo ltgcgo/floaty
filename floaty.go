@@ -24,13 +24,15 @@ type FloatyItem struct {
 }
 type FloatyModule struct {
 	logger *zap.Logger
-	values map[string]*FloatyItem `json:"additional,omitempty"`
+	values map[string]*FloatyItem `json:"values,omitempty"`
+	i int8
 }
 // Parse the Caddyfile directives
 func (module *FloatyModule) UnmarshalCaddyfile(
 	dispenser *caddyfile.Dispenser,
 ) error {
 	timeNow := time.Now().UnixMilli();
+	module.i = 2;
 	fmt.Printf("\x1b[1;33m[Floaty]\x1b[0;m Parsing Caddyfile... %d\n", timeNow);
 	// Initialize the maps
 	if (module.values == nil) {
@@ -90,11 +92,10 @@ func caddyParser(
 ) {
 	module := new(FloatyModule);
 	err := module.UnmarshalCaddyfile(helper.Dispenser);
-	if (err != nil) {
-		return nil, err;
+	if (err == nil) {
+		fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m No errors are present in the Caddyfile.");
 	};
-	fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m No errors are present in the Caddyfile.");
-	return module, nil;
+	return module, err;
 }
 // Register the module
 func (FloatyModule) CaddyModule() caddy.ModuleInfo {
@@ -124,6 +125,7 @@ func (module *FloatyModule) Provision(ctx caddy.Context) error {
 		fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Map not yet parsed. Creating the map.");
 	};
 	module.logger = ctx.Logger();
+	fmt.Println(module.i);
 	fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Now provisioned!")
 	return nil;
 }
