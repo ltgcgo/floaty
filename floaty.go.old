@@ -21,7 +21,7 @@ import (
 type FloatyPool struct {
 	lastProvision int64
 	nextProvision int64
-	map map[string]string
+	//map map[string]string
 }
 type FloatyModule struct {
 	// Logger
@@ -143,14 +143,14 @@ func (module FloatyModule) ServeHTTP(
 ) error {
 	repl := request.Context().Value(caddy.ReplacerCtxKey).(*caddy.Replacer);
 	// Set values for placeholders
-	/*repl.Set("http.floaty", module.InstanceId);
+	repl.Set("http.floaty", module.InstanceId);
 	module.logger.Info(
 		"Floaty has accessed global ID: ",
 		zap.String("id", module.InstanceId),
 	);
 	for i0, e0 := range module.MappedIds {
 		repl.Set("http.floaty." + i0, e0);
-	};*/
+	};
 	return handler.ServeHTTP(writer, request);
 }
 
