@@ -77,6 +77,7 @@ func (module *FloatyModule) UnmarshalCaddyfile(
 	module.values["rootId"].lastWrite = timeNow;
 	module.values["rootId"].nextWrite = timeNow + module.values["rootId"].duration;
 	fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Root parameters parsed.");
+	fmt.Println(module.i);
 	/*fmt.Printf("%d\n", length);
 	fmt.Printf("%d\n", duration);
 	fmt.Println(module.values["rootId"].id);
@@ -131,9 +132,9 @@ func (module *FloatyModule) Provision(ctx caddy.Context) error {
 }
 
 // Validate!
-func (module *FloatyModule) Validate() error {
+/*func (module *FloatyModule) Validate() error {
 	return nil;
-}
+}*/
 
 // Handle!
 // Handle requests with placeholder replacements
