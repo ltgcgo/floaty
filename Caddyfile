@@ -6,11 +6,13 @@ http://:8040 {
 	log {
 		level INFO
 	}
-	floaty 8 10s {
+	floaty 4 10s {
 		nextField 16 10m
+		blankDuration 20
+		allBlank
 	}
 	header X-Floaty {http.floaty}
 	header X-Time {time.now.http}
-	respond "Hello! The current Floaty ID is: {{placeholder \"http.floaty\"}}."
+	respond "Hello! The current Floaty ID is: {{placeholder \"http.floaty\"}}. {{placeholder \"http.floaty.allBlank\"}}, {{placeholder \"http.floaty.blankDuration\"}}, {{placeholder \"http.floaty.nextField\"}}"
 	templates
 }
