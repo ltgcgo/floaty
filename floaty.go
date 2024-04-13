@@ -17,29 +17,24 @@ import (
 // Initialize!
 type FloatyItem struct {
 	id string
-	length int `json:"length"`
-	duration int64 `json:"duration"`
+	Length int `json:"length,omitempty"`
+	Duration int64 `json:"duration,omitempty"`
 	lastWrite int64
 	nextWrite int64
 }
 type FloatyModule struct {
 	logger *zap.Logger
-	values map[string]*FloatyItem `json:"values,omitempty"`
-	i int8
+	Values map[string]*FloatyItem `json:"values,omitempty"`
 }
 // Parse the Caddyfile directives
 func (module *FloatyModule) UnmarshalCaddyfile(
 	dispenser *caddyfile.Dispenser,
 ) error {
-	timeNow := time.Now().UnixMilli();
-	module.i = 2;
-	fmt.Printf("\x1b[1;33m[Floaty]\x1b[0;m Parsing Caddyfile... %d\n", timeNow);
 	// Initialize the maps
-	if (module.values == nil) {
-		module.values = make(map[string]*FloatyItem);
-		fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Map not yet provisioned. Creating the map.");
+	if (module.Values == nil) {
+		module.Values = make(map[string]*FloatyItem);
 	};
-	module.values["rootId"] = new(FloatyItem);
+	module.Values["rootId"] = new(FloatyItem);
 	// Parse the rootId parameters
 	arg1 := dispenser.NextArg();
 	arg2 := dispenser.NextArg();
@@ -71,18 +66,8 @@ func (module *FloatyModule) UnmarshalCaddyfile(
 	} else {
 		duration = 5400000; // 15 minutes
 	};
-	module.values["rootId"].duration = duration;
-	module.values["rootId"].length = length;
-	module.values["rootId"].id = nanoid.Must(module.values["rootId"].length);
-	module.values["rootId"].lastWrite = timeNow;
-	module.values["rootId"].nextWrite = timeNow + module.values["rootId"].duration;
-	fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Root parameters parsed.");
-	fmt.Println(module.i);
-	/*fmt.Printf("%d\n", length);
-	fmt.Printf("%d\n", duration);
-	fmt.Println(module.values["rootId"].id);
-	fmt.Println(module.values["rootId"].lastWrite);
-	fmt.Println(module.values["rootId"].nextWrite);*/
+	module.Values["rootId"].Duration = duration;
+	module.Values["rootId"].Length = length;
 	return nil;
 }
 func caddyParser(
@@ -115,19 +100,19 @@ func init() {
 // Provision!
 func (module *FloatyModule) Provision(ctx caddy.Context) error {
 	timeNow := time.Now().UnixMilli();
-	if (module.values == nil) {
-		module.values = make(map[string]*FloatyItem);
-		module.values["rootId"] = new(FloatyItem);
-		module.values["rootId"].duration = 5000;
-		module.values["rootId"].length = 24;
-		module.values["rootId"].id = nanoid.Must(module.values["rootId"].length);
-		module.values["rootId"].lastWrite = timeNow;
-		module.values["rootId"].nextWrite = timeNow + module.values["rootId"].duration;
-		fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Map not yet parsed. Creating the map.");
+	if (module.Values == nil) {
+		module.Values = make(map[string]*FloatyItem);
+		module.Values["rootId"] = new(FloatyItem);
+		module.Values["rootId"].Duration = 5000;
+		module.Values["rootId"].Length = 24;
+		fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Map not yet parsed before provision. Creating the map.");
+	};
+	for mapKey, mapConf := range module.Values {
+		module.Values[mapKey].id = nanoid.Must(mapConf.Length);
+		module.Values[mapKey].lastWrite = timeNow;
+		module.Values[mapKey].nextWrite = timeNow + mapConf.Duration;
 	};
 	module.logger = ctx.Logger();
-	fmt.Println(module.i);
-	fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Now provisioned!")
 	return nil;
 }
 
@@ -148,28 +133,28 @@ func (module FloatyModule) ServeHTTP(
 	// Refresh IDs when stale
 	// Refresh root ID
 	fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Received a request.");
-	fmt.Println(module.values["rootId"].nextWrite);
+	fmt.Println(module.Values["rootId"].nextWrite);
 	fmt.Println("\x1b[1;33m[Floaty]\x1b[0;m Begins processing.");
-	if (module.values["rootId"].nextWrite <= timeNow) {
+	if (module.Values["rootId"].nextWrite <= timeNow) {
 		module.logger.Info(
 			"Root ID of Floaty has expired! Current state.",
-			zap.String("id", module.values["rootId"].id),
-			zap.Int64("lastWrite", module.values["rootId"].lastWrite),
-			zap.Int64("nextWrite", module.values["rootId"].nextWrite),
+			zap.String("id", module.Values["rootId"].id),
+			zap.Int64("lastWrite", module.Values["rootId"].lastWrite),
+			zap.Int64("nextWrite", module.Values["rootId"].nextWrite),
 			zap.Int64("timeNow", timeNow),
 		);
-		module.values["rootId"].id = nanoid.Must(module.values["rootId"].length);
-		module.values["rootId"].lastWrite = timeNow;
-		module.values["rootId"].nextWrite = timeNow + module.values["rootId"].duration;
+		module.Values["rootId"].id = nanoid.Must(module.Values["rootId"].Length);
+		module.Values["rootId"].lastWrite = timeNow;
+		module.Values["rootId"].nextWrite = timeNow + module.Values["rootId"].Duration;
 		module.logger.Info(
 			"Root ID of Floaty has expired! New state.",
-			zap.String("id", module.values["rootId"].id),
-			zap.Int64("lastWrite", module.values["rootId"].lastWrite),
-			zap.Int64("nextWrite", module.values["rootId"].nextWrite),
+			zap.String("id", module.Values["rootId"].id),
+			zap.Int64("lastWrite", module.Values["rootId"].lastWrite),
+			zap.Int64("nextWrite", module.Values["rootId"].nextWrite),
 		);
 	};
 	// Set values for placeholders
-	repl.Set("http.floaty", module.values["rootId"].id);
+	repl.Set("http.floaty", module.Values["rootId"].id);
 	/*module.logger.Info(
 		"Floaty has accessed global ID: ",
 		zap.String("id", module.InstanceId),
